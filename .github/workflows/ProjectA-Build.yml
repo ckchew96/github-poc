@@ -1,0 +1,14 @@
+name: ProjectA - Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: build
+      project: ProjectA
+      environment: dev
