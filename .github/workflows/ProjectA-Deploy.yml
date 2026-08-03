@@ -1,0 +1,27 @@
+name: ProjectA - Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifactVersion:
+        description: "Artifact Version"
+        required: true
+        default: "latest"
+
+      environment:
+        description: "Target Environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: deploy
+      project: ProjectA
+      artifactVersion: ${{ inputs.artifactVersion }}
+      environment: ${{ inputs.environment }}
