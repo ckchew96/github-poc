@@ -6,9 +6,37 @@ on:
       - main
 
 jobs:
-  build:
+  set-env-variables:
+    name: Set Environment Variables
     uses: ./.github/workflows/baseline.yml
     with:
-      operation: build
+      operation: set-env-variables
+      project: ProjectA
+      environment: dev
+
+  build-artifact:
+    name: Build Artifact
+    needs: set-env-variables
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: build-artifact
+      project: ProjectA
+      environment: dev
+
+  publish-artifact:
+    name: Publish Artifact
+    needs: build-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: publish-artifact
+      project: ProjectA
+      environment: dev
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: publish-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: deploy-dev
       project: ProjectA
       environment: dev
