@@ -1,27 +1,42 @@
-name: ProjectA - Deploy
+name: ProjectA - Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      artifactVersion:
-        description: "Artifact Version"
-        required: true
-        default: "latest"
-
-      environment:
-        description: "Target Environment"
-        required: true
-        type: choice
-        options:
-          - dev
-          - staging
-          - production
+  push:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  set-env-variables:
+    name: Set Environment Variables
     uses: ./.github/workflows/baseline.yml
     with:
-      operation: deploy
+      operation: set-env-variables
       project: ProjectA
-      artifactVersion: ${{ inputs.artifactVersion }}
-      environment: ${{ inputs.environment }}
+      environment: dev
+
+  build-artifact:
+    name: Build Artifact
+    needs: set-env-variables
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: build-artifact
+      project: ProjectA
+      environment: dev
+
+  publish-artifact:
+    name: Publish Artifact
+    needs: build-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: publish-artifact
+      project: ProjectA
+      environment: dev
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: publish-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: deploy-dev
+      project: ProjectA
+      environment: dev
