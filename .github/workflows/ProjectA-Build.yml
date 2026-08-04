@@ -1,12 +1,26 @@
-name: ProjectA - Build
+name: ProjectA - Deploy
 
 on:
   push:
     branches:
       - main
 
+  workflow_dispatch:
+    inputs:
+      artifact-version:
+        description: Select artifact version
+        required: true
+        type: choice
+        options:
+          - v1.0.0
+          - v1.0.1
+          - v1.0.2
+          - v2.0.0
+        default: v2.0.0
+
 jobs:
   set-env-variables:
+    name: Set Environment Variables
     uses: ./.github/workflows/baseline.yml
     with:
       operation: set-env-variables
@@ -14,6 +28,7 @@ jobs:
       environment: dev
 
   build-artifact:
+    name: Build Artifact
     needs: set-env-variables
     uses: ./.github/workflows/baseline.yml
     with:
@@ -22,6 +37,7 @@ jobs:
       environment: dev
 
   publish-artifact:
+    name: Publish Artifact
     needs: build-artifact
     uses: ./.github/workflows/baseline.yml
     with:
@@ -30,6 +46,7 @@ jobs:
       environment: dev
 
   deploy-dev:
+    name: Deploy to Dev
     needs: publish-artifact
     uses: ./.github/workflows/baseline.yml
     with:
