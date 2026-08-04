@@ -1,4 +1,4 @@
-name: ProjectA - Build
+name: ProjectA - Deploy
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       artifact-version:
-        description: "Select artifact version"
+        description: Select artifact version
         required: true
         type: choice
         options:
@@ -18,46 +18,48 @@ on:
           - v2.0.0
         default: v2.0.0
 
+
 jobs:
 
-  set-env-variables:
-    if: github.event_name == 'push'
+  prepare-artifact:
+    name: Prepare Artifact
     runs-on: ubuntu-latest
-    steps:
-      - run: echo "Set Environment Variables"
 
-  build-artifact:
-    if: github.event_name == 'push'
-    needs: set-env-variables
-    runs-on: ubuntu-latest
     steps:
-      - run: echo "Build Artifact"
 
-  publish-artifact:
-    if: github.event_name == 'push'
-    needs: build-artifact
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Publish Artifact"
+      - name: Set Environment Variables
+        run: |
+          echo "Set Environment Variables"
 
-  download-artifact:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo "Download Artifact"
-          echo "Version: ${{ inputs.artifact-version }}"
+
+      # New release path
+      - name: Build Artifact
+        if: github.event_name == 'push'
+        run: |
+          echo "Build Artifact"
+
+
+      - name: Publish Artifact
+        if: github.event_name == 'push'
+        run: |
+          echo "Publish Artifact"
+
+
+      # Rollback / redeployment path
+      - name: Download Artifact
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Download Existing Artifact"
+          echo "Artifact Version: ${{ inputs.artifact-version }}"
+
 
   deploy-dev:
-    if: github.event_name == 'push'
-    needs: publish-artifact
+    name: Deploy to Dev
+    needs: prepare-artifact
     runs-on: ubuntu-latest
-    steps:
-      - run: echo "Deploy to Dev"
 
-  deploy-dev-manual:
-    if: github.event_name == 'workflow_dispatch'
-    needs: download-artifact
-    runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploy Downloaded Artifact to Dev"
+
+      - name: Deploy Dev
+        run: |
+          echo "Deploy Artifact to Dev"
