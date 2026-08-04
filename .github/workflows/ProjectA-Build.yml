@@ -20,43 +20,74 @@ on:
 
 jobs:
 
+  #################################################
+  # BUILD PATH (Release Branch)
+  #################################################
+
+  set-env-variables:
+    name: Set Environment Variables
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: set-env-variables
+      project: ProjectA
+      environment: dev
+
   build-artifact:
     name: Build Artifact
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    needs: set-env-variables
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: build-artifact
+      project: ProjectA
+      environment: dev
 
-    steps:
-      - name: Build Artifact
-        run: |
-          echo "=================================="
-          echo "Release branch detected"
-          echo "Building new artifact..."
-          echo "=================================="
+  publish-artifact:
+    name: Publish Artifact
+    if: github.event_name == 'push'
+    needs: build-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: publish-artifact
+      project: ProjectA
+      environment: dev
+
+  #################################################
+  # MANUAL DEPLOYMENT PATH
+  #################################################
 
   download-artifact:
     name: Download Existing Artifact
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: download-artifact
+      project: ProjectA
+      artifact-version: ${{ inputs.artifact-version }}
+      environment: dev
 
-    steps:
-      - name: Download Artifact
-        run: |
-          echo "=================================="
-          echo "Manual deployment detected"
-          echo "Downloading artifact: ${{ inputs.artifact-version }}"
-          echo "=================================="
+  #################################################
+  # COMMON DEPLOYMENT
+  #################################################
 
-  deploy:
-    name: Deploy
-    needs:
-      - build-artifact
-      - download-artifact
+  deploy-dev:
+    name: Deploy to Dev
     if: always() && !cancelled()
-    runs-on: ubuntu-latest
+    needs:
+      - publish-artifact
+      - download-artifact
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: deploy-dev
+      project: ProjectA
+      environment: dev
 
-    steps:
-      - name: Deploy
-        run: |
-          echo "=================================="
-          echo "Deploying package..."
-          echo "=================================="
+  health-check-dev:
+    name: Health Check - Dev
+    needs: deploy-dev
+    uses: ./.github/workflows/baseline.yml
+    with:
+      operation: health-check
+      project: ProjectA
+      environment: dev
