@@ -5,38 +5,50 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Select artifact version to deploy
+        required: true
+        type: choice
+        options:
+          - v1.0.0
+          - v1.0.1
+          - v1.1.0
+        default: v1.1.0
+
 jobs:
   set-env-variables:
-    name: Set Environment Variables
     uses: ./.github/workflows/baseline.yml
     with:
       operation: set-env-variables
       project: ProjectA
       environment: dev
+      version: ${{ github.event.inputs.version || 'latest' }}
 
   build-artifact:
-    name: Build Artifact
     needs: set-env-variables
     uses: ./.github/workflows/baseline.yml
     with:
       operation: build-artifact
       project: ProjectA
       environment: dev
+      version: ${{ github.event.inputs.version || 'latest' }}
 
   publish-artifact:
-    name: Publish Artifact
     needs: build-artifact
     uses: ./.github/workflows/baseline.yml
     with:
       operation: publish-artifact
       project: ProjectA
       environment: dev
+      version: ${{ github.event.inputs.version || 'latest' }}
 
   deploy-dev:
-    name: Deploy to Dev
     needs: publish-artifact
     uses: ./.github/workflows/baseline.yml
     with:
       operation: deploy-dev
       project: ProjectA
       environment: dev
+      version: ${{ github.event.inputs.version || 'latest' }}
