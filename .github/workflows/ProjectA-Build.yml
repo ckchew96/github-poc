@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       artifact-version:
-        description: Select artifact version
+        description: "Select artifact version"
         required: true
         type: choice
         options:
@@ -19,37 +19,44 @@ on:
         default: v2.0.0
 
 jobs:
-  set-env-variables:
-    name: Set Environment Variables
-    uses: ./.github/workflows/baseline.yml
-    with:
-      operation: set-env-variables
-      project: ProjectA
-      environment: dev
 
   build-artifact:
     name: Build Artifact
-    needs: set-env-variables
-    uses: ./.github/workflows/baseline.yml
-    with:
-      operation: build-artifact
-      project: ProjectA
-      environment: dev
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
 
-  publish-artifact:
-    name: Publish Artifact
-    needs: build-artifact
-    uses: ./.github/workflows/baseline.yml
-    with:
-      operation: publish-artifact
-      project: ProjectA
-      environment: dev
+    steps:
+      - name: Build Artifact
+        run: |
+          echo "=================================="
+          echo "Release branch detected"
+          echo "Building new artifact..."
+          echo "=================================="
 
-  deploy-dev:
-    name: Deploy to Dev
-    needs: publish-artifact
-    uses: ./.github/workflows/baseline.yml
-    with:
-      operation: deploy-dev
-      project: ProjectA
-      environment: dev
+  download-artifact:
+    name: Download Existing Artifact
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Artifact
+        run: |
+          echo "=================================="
+          echo "Manual deployment detected"
+          echo "Downloading artifact: ${{ inputs.artifact-version }}"
+          echo "=================================="
+
+  deploy:
+    name: Deploy
+    needs:
+      - build-artifact
+      - download-artifact
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        run: |
+          echo "=================================="
+          echo "Deploying package..."
+          echo "=================================="
